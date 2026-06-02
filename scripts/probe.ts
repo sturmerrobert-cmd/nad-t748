@@ -20,6 +20,8 @@
 import { SerialPort } from 'serialport'
 
 const QUERIES = ['Main.Model?', 'Main.Power?', 'Main.Version?', 'Main.Volume?']
+// Classic NAD (T748) framing: \r CMD \r — leading CR is required.
+const LEAD = '\r'
 const TERMINATOR = '\r'
 const BAUD = 115200
 const TIMEOUT_MS = 1500
@@ -77,7 +79,7 @@ function query(port: SerialPort, cmd: string): Promise<string> {
       port.off('data', onData)
     }
     port.on('data', onData)
-    port.write(cmd + TERMINATOR, (err) => {
+    port.write(LEAD + cmd + TERMINATOR, (err) => {
       if (err) {
         cleanup()
         resolve(`(write error: ${err.message})`)

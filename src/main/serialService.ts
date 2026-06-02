@@ -7,6 +7,11 @@ import type {
   SerialStatus
 } from '../shared/types'
 
+// Classic NAD serial protocol (T748 family) frames every command with a
+// carriage return on BOTH sides: \r CMD \r. The leading CR is required — the
+// T748 ignores commands that arrive with only a trailing CR (confirmed against
+// the nad_receiver reference library, tested on the T748v2).
+const LEAD = '\r'
 const TERMINATOR = '\r'
 const DEFAULT_TIMEOUT_MS = 1500
 
@@ -209,7 +214,7 @@ export class SerialService extends EventEmitter {
     this.inFlight = item
     this.lastWriteAt = Date.now()
 
-    this.port.write(item.command + TERMINATOR, (err) => {
+    this.port.write(LEAD + item.command + TERMINATOR, (err) => {
       if (err) {
         this.log('error', `Write failed: ${err.message}`)
         this.failInFlight(err.message)
