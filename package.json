@@ -1,6 +1,6 @@
 {
   "name": "nad-t748-control",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "NAD T748 serial (RS-232) control app — headless OSD replacement. Windows portable .exe.",
   "author": "sturm",
   "license": "MIT",

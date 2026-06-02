@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import type { AppConfig, ProbeResult } from '../../shared/types'
 import { COMMANDS } from '../../shared/commands'
 import { VolumeControl } from './VolumeControl'
@@ -24,11 +24,19 @@ export function ControlPanel({ connected, config, state, probe }: Props): JSX.El
   const isSupported = (def: { id: string; pollable: boolean }) =>
     !def.pollable ? true : probe ? !!supportedMap[def.id] : true
 
-  // "Refresh state" polls every supported, pollable command (the on-demand set).
-  const refreshAll = () => {
-    const ids = COMMANDS.filter((c) => c.pollable && isSupported(c)).map((c) => c.id)
-    window.nad.pollState(ids)
-  }
+  // Every supported, pollable command — the on-demand "read current values" set.
+  const supportedPollableIds = useMemo(
+    () => COMMANDS.filter((c) => c.pollable && isSupported(c)).map((c) => c.id),
+    [supportedMap, probe]
+  )
+  const refreshAll = () => window.nad.pollState(supportedPollableIds)
+
+  // Auto-load current values once a capability probe has run (the supported set
+  // is then small enough not to flood the port). Without a probe the user pulls
+  // values on demand (per-control ↻ or the toolbar button) to avoid ~150 queries.
+  useEffect(() => {
+    if (connected && probe) window.nad.pollState(supportedPollableIds)
+  }, [connected, probe, supportedPollableIds])
 
   // Non-volume commands grouped for layout.
   const groups = useMemo(() => {
@@ -58,7 +66,7 @@ export function ControlPanel({ connected, config, state, probe }: Props): JSX.El
   return (
     <div className="panel control-panel">
       <div className="control-toolbar">
-        <button onClick={refreshAll}>Refresh state</button>
+        <button onClick={refreshAll}>↻ Refresh all values</button>
         {probe ? (
           <span className="muted">
             Showing {COMMANDS.filter((c) => c.kind !== 'volume' && isSupported(c)).length} supported

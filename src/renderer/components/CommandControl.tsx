@@ -83,9 +83,6 @@ export function CommandControl({ def, value, supported, connected }: Props): JSX
         return (
           <div className="ctl-row">
             <span className="stepper-value">{value ?? '—'}</span>
-            <button disabled={disabled} onClick={() => send('?')}>
-              Refresh
-            </button>
           </div>
         )
       case 'ir':
@@ -114,6 +111,16 @@ export function CommandControl({ def, value, supported, connected }: Props): JSX
         <span className="cc-label">{def.label}</span>
         <code className="cc-cmd">{def.cmd}</code>
         {!supported && connected && <span className="cc-badge">not supported</span>}
+        {def.pollable && (
+          <button
+            className="cc-refresh"
+            disabled={disabled}
+            title="Read current value from the receiver"
+            onClick={() => window.nad.pollState([def.id])}
+          >
+            ↻
+          </button>
+        )}
       </div>
       {def.description && <div className="cc-desc">{def.description}</div>}
       {body()}
