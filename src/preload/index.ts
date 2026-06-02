@@ -13,7 +13,7 @@ const api: NadApi = {
   setVolumeAbsolute: (args) => ipcRenderer.invoke(IPC.setVolumeAbsolute, args),
   stepVolume: (args) => ipcRenderer.invoke(IPC.stepVolume, args),
   probeCapabilities: () => ipcRenderer.invoke(IPC.probeCapabilities),
-  pollState: () => ipcRenderer.invoke(IPC.pollState),
+  pollState: (ids) => ipcRenderer.invoke(IPC.pollState, ids),
   getConfig: () => ipcRenderer.invoke(IPC.getConfig),
   setConfig: (patch) => ipcRenderer.invoke(IPC.setConfig, patch),
   onStatus: (cb: (s: SerialStatus) => void) => {

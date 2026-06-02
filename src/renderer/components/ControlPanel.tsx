@@ -9,10 +9,9 @@ interface Props {
   config: AppConfig
   state: Record<string, string>
   probe: ProbeResult[] | null
-  onPoll: () => void
 }
 
-export function ControlPanel({ connected, config, state, probe, onPoll }: Props): JSX.Element {
+export function ControlPanel({ connected, config, state, probe }: Props): JSX.Element {
   // Map id -> supported (from probe). If no probe was run, treat all as supported.
   const supportedMap = useMemo(() => {
     const m: Record<string, boolean> = {}
@@ -20,7 +19,16 @@ export function ControlPanel({ connected, config, state, probe, onPoll }: Props)
     return m
   }, [probe])
 
-  const isSupported = (id: string) => (probe ? !!supportedMap[id] : true)
+  // A command counts as supported if: it can't be probed (no '?', so we can't
+  // tell — show it), or no probe has run yet, or the probe saw it answer.
+  const isSupported = (def: { id: string; pollable: boolean }) =>
+    !def.pollable ? true : probe ? !!supportedMap[def.id] : true
+
+  // "Refresh state" polls every supported, pollable command (the on-demand set).
+  const refreshAll = () => {
+    const ids = COMMANDS.filter((c) => c.pollable && isSupported(c)).map((c) => c.id)
+    window.nad.pollState(ids)
+  }
 
   // Non-volume commands grouped for layout.
   const groups = useMemo(() => {
@@ -50,11 +58,17 @@ export function ControlPanel({ connected, config, state, probe, onPoll }: Props)
   return (
     <div className="panel control-panel">
       <div className="control-toolbar">
-        <button onClick={onPoll}>Refresh state</button>
-        {probe && (
+        <button onClick={refreshAll}>Refresh state</button>
+        {probe ? (
           <span className="muted">
-            Showing {COMMANDS.filter((c) => c.kind !== 'volume' && isSupported(c.id)).length} supported
-            controls (capability probe applied)
+            Showing {COMMANDS.filter((c) => c.kind !== 'volume' && isSupported(c)).length} supported
+            controls (capability probe applied). Run the probe again from Connection Test if you
+            change inputs/modules.
+          </span>
+        ) : (
+          <span className="muted">
+            Showing the full RS-232 protocol. Run <strong>Probe capabilities</strong> in Connection
+            Test to grey out what this T748 doesn’t support.
           </span>
         )}
       </div>
@@ -62,7 +76,7 @@ export function ControlPanel({ connected, config, state, probe, onPoll }: Props)
       <VolumeControl config={config} currentDb={currentVolume} />
 
       {groups.map(([group, defs]) => {
-        const visible = defs.filter((d) => isSupported(d.id))
+        const visible = defs.filter((d) => isSupported(d))
         if (visible.length === 0) return null
         return (
           <section key={group} className="control-group">
@@ -73,7 +87,7 @@ export function ControlPanel({ connected, config, state, probe, onPoll }: Props)
                   key={def.id}
                   def={def}
                   value={state[def.id]}
-                  supported={isSupported(def.id)}
+                  supported={isSupported(def)}
                   connected={connected}
                 />
               ))}

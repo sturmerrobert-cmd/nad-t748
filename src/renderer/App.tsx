@@ -118,7 +118,6 @@ export function App(): JSX.Element {
             config={config}
             state={state}
             probe={probe}
-            onPoll={poll}
           />
         )}
 

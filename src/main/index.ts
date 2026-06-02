@@ -3,7 +3,7 @@ import { join } from 'path'
 import { SerialService } from './serialService'
 import { ConfigStore } from './configStore'
 import { VolumeController } from './volumeController'
-import { COMMANDS, POLLABLE_COMMANDS, commandById } from '../shared/commands'
+import { COMMANDS, POLLABLE_COMMANDS, LIVE_POLL_IDS, commandById } from '../shared/commands'
 import { IPC, type SendCommandArgs, type VolumeSetArgs, type VolumeStepArgs } from '../shared/ipc'
 import type { CommandResult, ProbeResult } from '../shared/types'
 
@@ -130,10 +130,14 @@ function registerIpc(): void {
     return results
   })
 
-  // Poll current state of every pollable variable.
-  ipcMain.handle(IPC.pollState, async (): Promise<Record<string, string>> => {
+  // Poll current state. With no ids, poll only the light "live" set (so periodic
+  // polling never floods the port with ~150 queries); with ids, poll just those.
+  ipcMain.handle(IPC.pollState, async (_e, ids?: string[]): Promise<Record<string, string>> => {
+    const targets = ids && ids.length
+      ? POLLABLE_COMMANDS.filter((c) => ids.includes(c.id))
+      : POLLABLE_COMMANDS.filter((c) => LIVE_POLL_IDS.includes(c.id))
     const state: Record<string, string> = {}
-    for (const def of POLLABLE_COMMANDS) {
+    for (const def of targets) {
       const res = await serial.send(`${def.cmd}?`, def.cmd, 800)
       const value = parseValue(def.cmd, res.response)
       if (value !== null) state[def.id] = value

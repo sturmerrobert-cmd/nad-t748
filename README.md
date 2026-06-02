@@ -95,25 +95,40 @@ to pick `MAX_VOLUME_DB`.
 
 ## Protocol coverage
 
-Commands are the NAD **TXX7 V2.x ASCII** protocol family, the set validated
-against the **T748v2** by the open-source
-[`joopert/nad_receiver`](https://github.com/joopert/nad_receiver) library:
+The app exposes the **full NAD TXX7 V2.x ASCII protocol** (~200 variables), taken
+from NAD's official protocol pack (`docs/nad-protocol/`, notably
+`T787_Commands.pdf` and `nad_ethernet_rs232_spec_2.03.pdf`). Groups:
 
-| Group | Variables |
-|-------|-----------|
-| Main  | `Main.Power`, `Main.Volume`, `Main.Mute`, `Main.Source` (1–12), `Main.ListeningMode`, `Main.Dimmer`, `Main.Sleep`, `Main.SpeakerA`, `Main.SpeakerB`, `Main.Tape1` |
-| Info  | `Main.Model`, `Main.Version` (read-only) |
-| Tuner | `Tuner.Band`, `Tuner.FM.Frequency`, `Tuner.FM.Preset`, `Tuner.FM.Mute`, `Tuner.AM.Frequency`, `Tuner.AM.Preset` |
-| Advanced | `Main.IR` (send raw remote IR code) |
+| Group | Examples |
+|-------|----------|
+| Main | Power, Volume (guarded), Mute, Source, Dimmer, Sleep |
+| Tone | Bass, Treble, Center Dialog, Tone Defeat, Enhanced Bass, Lip-Sync Delay |
+| Audyssey | Curve, Dynamic Volume, Dynamic EQ, Offset (AM200 module) |
+| Dolby / DTS | DRC, Panorama, Center Width/Gain, Dimension |
+| Listening Modes | active mode + per-format defaults (Analog/Digital/DD/DTS) |
+| Speaker Setup | size + crossover (Front/Center/Surround/Back/Sub) |
+| Speaker Levels | per-channel level + trim (−12…+12 dB) |
+| Speaker Distances | per-channel distance, units (Feet/Meters) |
+| Triggers | 3× output assignment + delay, auto-trigger |
+| Display (VFD) | display mode, line 1/2 content, OSD temp |
+| Video (VM200) | resolution, rate, aspect, brightness/contrast, NR, edge enh. |
+| iPod (IPD dock) | transport, repeat/shuffle, now-playing metadata |
+| Tuner | Band, FM/AM frequency + step, presets, FM mute, RDS, DAB, XM |
+| Sources (1–10) | enable, analog/digital/video format + input, gain, preset, trigger |
+| Presets (1–5) | what each preset stores |
+| Zones (2–4) | power, mute, source, volume, fixed-volume mode |
+| Info | Model, Main/DSP/UART versions |
+| Advanced | `Main.IR` (send raw remote code), IR channel |
 
-Operators: `?` query · `=` set · `+` increment · `-` decrement. `Main.ListeningMode`,
-`Main.Sleep` and the tuner frequencies expose **step only** (`+`/`-`), so they are
-shown as next/previous controls with no live read-back.
+Operators: `?` query · `=` set · `+` increment · `-` decrement.
 
-The actual supported set on a given unit = what the protocol defines **and** what
-the device answers (determined at runtime by the capability probe). Settings the
-protocol does **not** expose (speaker calibration, tone controls, zone/video setup,
-…) are listed in the **OSD-only (TV)** tab — never faked or silently omitted.
+> **The full list is the T787/TXX7 family protocol. A T748 implements only a
+> SUBSET** — it lacks the optional modules (VM200 video, AM200 Audyssey, iPod
+> dock) and the extra zones bigger models have. **Exactly which variables your
+> T748 answers is determined at runtime by the Connection Test → _Probe
+> capabilities_ step**, which queries every variable and greys out the ones the
+> unit ignores. Anything genuinely outside the protocol (Audyssey mic sweep,
+> source renaming, network/firmware setup) is listed in the **OSD-only (TV)** tab.
 
 ---
 

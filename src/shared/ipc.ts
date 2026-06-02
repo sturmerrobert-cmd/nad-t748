@@ -67,7 +67,7 @@ export interface NadApi {
   setVolumeAbsolute(args: VolumeSetArgs): Promise<GuardedVolumeResult>
   stepVolume(args: VolumeStepArgs): Promise<GuardedVolumeResult>
   probeCapabilities(): Promise<ProbeResult[]>
-  pollState(): Promise<Record<string, string>>
+  pollState(ids?: string[]): Promise<Record<string, string>>
   getConfig(): Promise<AppConfig>
   setConfig(patch: Partial<AppConfig>): Promise<AppConfig>
   onStatus(cb: (s: SerialStatus) => void): () => void
